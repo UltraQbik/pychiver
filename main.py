@@ -1,4 +1,5 @@
 import os
+import argparse
 
 
 HEADER_FILESIZE: int = 8
@@ -79,13 +80,44 @@ class Archive:
                     file.write(archive.read(filesize))
 
 
-def main():
-    archive = Archive()
-    for path in os.listdir("topack"):
-        archive.put(os.path.join("topack", path))
-    archive.pack("cool_archive.arch")
+def parse_args():
+    """
+    Parses command line arguments
+    """
 
-    Archive.unpack("cool_archive.arch", "unpacked")
+    parser = argparse.ArgumentParser(
+        prog="pychiver",
+        description="just a silly pychiver")
+
+    parser.add_argument(
+        "-p", "--pack",
+        help="pack a directory into an archive")
+    parser.add_argument(
+        "-u", "--unpack",
+        help="unpack an archive")
+    parser.add_argument(
+        "-o", "--output",
+        help="name for created archive / unpacked folder",
+        required=True)
+
+    args = parser.parse_args()
+    if args.pack is None and args.unpack is None:
+        parser.error("Must include a mode ('--pack' or '--unpack')")
+
+    return args
+
+
+def main():
+    args = parse_args()
+    if args.pack is not None:
+        archive = Archive()
+        for entry in os.scandir(args.pack):
+            if not entry.is_file():
+                continue
+            archive.put(entry.path)
+        archive.pack(args.output)
+    elif args.unpack is not None:
+        Archive.unpack(args.unpack, args.output)
 
 
 if __name__ == '__main__':
